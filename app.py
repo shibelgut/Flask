@@ -1,81 +1,57 @@
 from flask import Flask, render_template  # подключаем модуль и render_template, который включает функции для Jinja
 from data import tours, departures
+import random
 
 app = Flask(__name__)  # объявляем экземпляр flask
 
 
-@app.route('/')  # объявляем путь /
-def main():
-    return render_template('index.html')
-
-
-@app.route('/departures/')
-def direction():
-    return render_template('departure.html')
-
-
-@app.route('/tours/')
-def tour():
-    return render_template('tour.html')
-
-
-@app.route('/data/')
+@app.route('/')
 def data():
-    # for key in tours:
-    #     t = tours[key]
-    #     id_list = []
-    #     title_list = []
-    #     price_list = []
-    #     stars_list = []
-    #     country_list = []
-    #     for k in t:
-    #         id_list.append(key)
-    #         if k == 'title':
-    #             title_list.append(t[k])
-    #         if k == 'price':
-    #             price_list = t[k]
-    #         if k == 'stars':
-    #             stars_list = t[k]
-    #         if k == 'country':
-    #             country_list = t[k]
-    #     output = render_template('data.html', country= country_list, id=id_list, title=title_list, price=price_list, stars=stars_list)
-    #     return output
-    tours_list = []
-    for t in tours:
-        tours_list.append(tours[t])
-    output = render_template('data.html', tours=tours_list)
+    # Создаем список случайных отелей
+    list_random_items = [random.choice(list(tours.items()))]
+    list_length = len(list_random_items)
+    while list_length < 6:
+        random_item_next = random.choice(list(tours.items()))
+        count = 0
+        for i in range(list_length):
+            if list_random_items[i] != random_item_next:
+                count += 1
+        if count == list_length:
+            list_random_items.append(random_item_next)
+            list_length = len(list_random_items)
+
+    list_numbers = []
+    list_items = []
+    for i in range(len(list_random_items)):
+        lst = list(list_random_items[i])
+        for j in range(len(lst)):
+            if j % 2 == 0:
+                list_numbers.append(lst[j])
+            else:
+                list_items.append(lst[j])
+
+    # Получаем словарь случайно выбранных отелей
+    random_tours = dict(zip(list_numbers, list_items))
+
+    output = render_template('index.html', tours=random_tours, departure=departures)
     return output
 
 
-@app.route('/data/departures/<name_departure>/')
+@app.route('/departures/<name_departure>/')
 def departure(name_departure):
-    tours_list = []
-    for t in tours:
-        tours_list.append(tours[t])
-    tours_departure_list = []
-    for s in tours_list:
-        if s["departure"] == name_departure:
-            tours_departure_list.append(s)
+    tours_departure = {}
+    for key, value in tours.items():
+        if value["departure"] == name_departure:
+            tours_departure[key] = value
             destination = departures[name_departure]
-    output = render_template('name_departure.html', destination=destination, departure=name_departure, tours=tours_departure_list)
+    output = render_template('departure.html', destination=destination[3:], departure=departures, tours=tours_departure,
+                             tours_list=list(tours_departure.values()))
     return output
 
 
-@app.route('/data/tours/<int:id_tour>/')
+@app.route('/tours/<int:id_tour>/')
 def tours_id(id_tour):
-    t = tours[id_tour]
-    for k in t:
-        if k == 'title':
-            title = t[k]
-        if k == 'price':
-            price = t[k]
-        if k == 'nights':
-            nights = t[k]
-        if k == 'country':
-            country = t[k]
-        if k == 'description':
-            description = t[k]
-    output = render_template('id.html', country=country, title=title, price=price, nights=nights, description=description)
+    output = render_template('tour.html', tours=tours, departure=departures, id=id_tour)
     return output
 
 
